@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DexHawk — Token Sniper Alert Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg:      #060810;
+    --surface: #0D1117;
+    --border:  #1C2333;
+    --green:   #00FF88;
+    --green2:  #00CC6A;
+    --red:     #FF4444;
+    --text:    #E8EDF5;
+    --muted:   #6B7A99;
+    --card:    #0F1520;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 600px;
+    background: radial-gradient(ellipse, rgba(0,255,136,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: rgba(6,8,16,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+  }
+  .nav-logo span { color: var(--text); }
+  .nav-badge {
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--green);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pulse-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(0,255,136,0.4); }
+    50% { opacity:0.6; box-shadow: 0 0 0 4px rgba(0,255,136,0); }
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(0,255,136,0.2);
+    background: rgba(0,255,136,0.05);
+    color: var(--green);
+    font-size: 0.72rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(40px, 7vw, 88px);
+    font-weight: 900;
+    line-height: 1;
+    animation: fadeUp 0.6s 0.1s ease both;
+    margin-bottom: 8px;
+  }
+  .hero h1 .green {
+    color: var(--green);
+    text-shadow: 0 0 40px rgba(0,255,136,0.4);
+  }
+  .hero-sub {
+    font-size: clamp(14px, 2vw, 18px);
+    color: var(--muted);
+    max-width: 520px;
+    line-height: 1.7;
+    margin: 24px auto 0;
+    font-weight: 300;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: #000;
+    padding: 14px 36px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .btn-primary:hover {
+    background: var(--green2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,255,136,0.3);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    padding: 14px 36px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+  /* TICKER */
+  .ticker {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+  .ticker-track {
+    display: flex;
+    gap: 48px;
+    animation: ticker 20s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-item {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    color: var(--green);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* STATS */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    padding: 60px 24px 0;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-box {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 28px 20px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .stat-box:hover { border-color: rgba(0,255,136,0.3); }
+  .stat-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 6px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* SECTIONS */
+  .section {
+    position: relative;
+    z-index: 1;
+    padding: 80px 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .section-tag {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+    font-family: 'Orbitron', monospace;
+  }
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(24px, 3.5vw, 40px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 560px;
+    font-weight: 300;
+  }
+
+  /* FEATURES */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+    margin-top: 48px;
+    background: var(--border);
+  }
+  .feature-card {
+    background: var(--card);
+    padding: 32px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+  .feature-card:hover { background: #121820; }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--green), transparent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+  }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-icon { font-size: 1.8rem; margin-bottom: 16px; }
+  .feature-card h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feature-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+
+  /* CHAINS */
+  .chains-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 40px;
+    background: var(--border);
+  }
+  .chain-card {
+    background: var(--card);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: background 0.2s;
+  }
+  .chain-card:hover { background: #121820; }
+  .chain-emoji { font-size: 1.6rem; }
+  .chain-name { font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 700; }
+  .chain-status { font-size: 0.7rem; color: var(--green); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  /* ALERT PREVIEW */
+  .alert-preview {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    padding: 28px;
+    margin-top: 40px;
+    font-family: monospace;
+    font-size: 0.875rem;
+    line-height: 1.8;
+    position: relative;
+  }
+  .alert-preview::before {
+    content: 'LIVE ALERT PREVIEW';
+    position: absolute;
+    top: 12px; right: 16px;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--green);
+    font-family: 'Orbitron', monospace;
+  }
+  .a-title { color: var(--green); font-weight: bold; font-size: 1rem; }
+  .a-label { color: var(--muted); }
+  .a-value { color: var(--text); }
+  .a-up { color: var(--green); }
+  .a-down { color: var(--red); }
+  .a-addr { color: #888; font-size: 0.8rem; }
+  .a-link { color: #4A9EFF; }
+
+  /* PRICING */
+  .pricing-card {
+    background: var(--card);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 48px 40px;
+    max-width: 480px;
+    margin: 48px auto 0;
+    text-align: center;
+    position: relative;
+  }
+  .pricing-badge {
+    display: inline-block;
+    background: var(--green);
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    margin-bottom: 24px;
+  }
+  .pricing-price {
+    font-family: 'Orbitron', monospace;
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--green);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(0,255,136,0.4);
+  }
+  .pricing-price span { font-size: 1.5rem; vertical-align: top; margin-top: 8px; display: inline-block; }
+  .pricing-desc { color: var(--muted); font-size: 0.875rem; margin: 12px 0 32px; }
+  .pricing-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pricing-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9rem;
+  }
+  .pricing-features li::before { content: '→'; color: var(--green); flex-shrink: 0; }
+
+  /* ACCESS */
+  .access-form {
+    display: flex;
+    gap: 0;
+    margin-top: 40px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .access-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-right: none;
+    color: var(--text);
+    padding: 14px 20px;
+    font-family: monospace;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .access-input:focus { border-color: var(--green); }
+  .access-input::placeholder { color: var(--muted); }
+  .access-btn {
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 14px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .access-btn:hover { background: var(--green2); }
+  .access-error { color: var(--red); font-size: 0.8rem; margin-top: 8px; text-align: center; display: none; }
+  .access-loading { color: var(--green); font-size: 0.8rem; margin-top: 8px; text-align: center; display: none; font-family: 'Orbitron', monospace; }
+
+  /* DOWNLOAD */
+  .download-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 40px;
+    margin-top: 32px;
+    display: none;
+  }
+  .download-section.visible { display: block; }
+  .download-title { font-family: 'Orbitron', monospace; font-size: 1.1rem; color: var(--green); margin-bottom: 6px; }
+  .download-sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 28px; }
+  .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .download-file {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: border-color 0.2s;
+  }
+  .download-file:hover { border-color: var(--green); }
+  .download-file-info { display: flex; align-items: center; gap: 10px; }
+  .download-file-icon { font-size: 1.3rem; }
+  .download-file-name { font-family: monospace; font-size: 0.8rem; }
+  .download-file-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .btn-download {
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 7px 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-download:hover { background: var(--green2); }
+  .instructions-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+  .instructions-box h4 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    color: var(--green);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .instructions-box ol { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .instructions-box li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.875rem; color: var(--muted); }
+  .step-num {
+    background: rgba(0,255,136,0.1);
+    color: var(--green);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* FAQ */
+  .faq-list { margin-top: 40px; display: flex; flex-direction: column; gap: 2px; }
+  .faq-item { background: var(--card); border: 1px solid var(--border); overflow: hidden; }
+  .faq-q {
+    padding: 20px 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+    user-select: none;
+  }
+  .faq-q:hover { color: var(--green); }
+  .faq-q .arrow { color: var(--green); font-size: 1.2rem; transition: transform 0.3s; }
+  .faq-item.open .faq-q .arrow { transform: rotate(45deg); }
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    padding: 0 24px;
+  }
+  .faq-item.open .faq-a { max-height: 200px; padding: 0 24px 20px; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 24px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+  .footer-text { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .stats-bar { flex-direction: column; }
+    .chains-grid { grid-template-columns: 1fr 1fr; }
+    .download-grid { grid-template-columns: 1fr; }
+    .access-form { flex-direction: column; }
+    .access-input { border-right: 1px solid var(--border); border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">DEX<span>HAWK</span></div>
+  <div class="nav-badge"><div class="pulse-dot"></div> Live — 6 Chains</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag"><div class="pulse-dot"></div> Real-Time Token Detection</div>
+  <h1>SNIPE EARLY.<br><span class="green">WIN BIG.</span></h1>
+  <p class="hero-sub">Real-time token sniper bot. Instant Telegram alerts the moment new tokens launch across 6 chains. Get in before everyone else.</p>
+  <div class="hero-actions">
+    <a href="https://whop.com/YOUR-WHOP-LINK" class="btn-primary" target="_blank">🔫 Get DexHawk — $37</a>
+    <a href="#how-it-works" class="btn-ghost">See How It Works</a>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <div class="ticker-item">⟠ ETH <span class="up">+247%</span> NEW LISTING</div>
+    <div class="ticker-item">🟡 BSC <span class="up">+89%</span> NEW LISTING</div>
+    <div class="ticker-item">◎ SOL <span class="up">+412%</span> NEW LISTING</div>
+    <div class="ticker-item">🔵 BASE <span class="up">+156%</span> NEW LISTING</div>
+    <div class="ticker-item">🔷 ARB <span class="up">+73%</span> NEW LISTING</div>
+    <div class="ticker-item">🟣 POLY <span class="up">+198%</span> NEW LISTING</div>
+    <div class="ticker-item">⟠ ETH <span class="up">+247%</span> NEW LISTING</div>
+    <div class="ticker-item">🟡 BSC <span class="up">+89%</span> NEW LISTING</div>
+    <div class="ticker-item">◎ SOL <span class="up">+412%</span> NEW LISTING</div>
+    <div class="ticker-item">🔵 BASE <span class="up">+156%</span> NEW LISTING</div>
+    <div class="ticker-item">🔷 ARB <span class="up">+73%</span> NEW LISTING</div>
+    <div class="ticker-item">🟣 POLY <span class="up">+198%</span> NEW LISTING</div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar reveal">
+  <div class="stat-box"><div class="stat-num">6</div><div class="stat-label">Chains Monitored</div></div>
+  <div class="stat-box"><div class="stat-num">30s</div><div class="stat-label">Alert Speed</div></div>
+  <div class="stat-box"><div class="stat-num">24/7</div><div class="stat-label">Always Running</div></div>
+  <div class="stat-box"><div class="stat-num">$37</div><div class="stat-label">One Time Only</div></div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="how-it-works">
+  <div class="section-tag reveal">— How It Works</div>
+  <h2 class="section-title reveal">Detect. Filter. Alert.<br>In under 30 seconds.</h2>
+  <p class="section-sub reveal">DexHawk monitors DEXScreener in real time. The moment a new token launches and passes your filters — your Telegram rings.</p>
+  <div class="features-grid">
+    <div class="feature-card reveal"><div class="feature-icon">🔍</div><h3>Real-Time Scanning</h3><p>Continuously polls DEXScreener every 30 seconds across all 6 chains simultaneously.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">🛡️</div><h3>Smart Filters</h3><p>Automatically filters rugs. Set minimum liquidity, volume, momentum, and transaction thresholds.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">⚡</div><h3>Instant Telegram Alert</h3><p>Contract address, price, liquidity, DEX link — everything in one message the moment it launches.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">⚙️</div><h3>Fully Configurable</h3><p>Conservative or aggressive — you control every filter. Change thresholds anytime.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">🚫</div><h3>Anti-Spam Built In</h3><p>Cooldown system prevents duplicate alerts. Each token only pings you once.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">🖥️</div><h3>Runs Anywhere</h3><p>Windows, Mac, Linux. Any machine with Python. Set up in 10 minutes.</p></div>
+  </div>
+</div>
+
+<!-- CHAINS -->
+<div class="section">
+  <div class="section-tag reveal">— Chains</div>
+  <h2 class="section-title reveal">6 Chains. One Bot.</h2>
+  <div class="chains-grid">
+    <div class="chain-card reveal"><div class="chain-emoji">⟠</div><div><div class="chain-name">Ethereum</div><div class="chain-status">● Active</div></div></div>
+    <div class="chain-card reveal"><div class="chain-emoji">🟡</div><div><div class="chain-name">BNB Chain</div><div class="chain-status">● Active</div></div></div>
+    <div class="chain-card reveal"><div class="chain-emoji">◎</div><div><div class="chain-name">Solana</div><div class="chain-status">● Active</div></div></div>
+    <div class="chain-card reveal"><div class="chain-emoji">🔵</div><div><div class="chain-name">Base</div><div class="chain-status">● Active</div></div></div>
+    <div class="chain-card reveal"><div class="chain-emoji">🔷</div><div><div class="chain-name">Arbitrum</div><div class="chain-status">● Active</div></div></div>
+    <div class="chain-card reveal"><div class="chain-emoji">🟣</div><div><div class="chain-name">Polygon</div><div class="chain-status">● Active</div></div></div>
+  </div>
+</div>
+
+<!-- ALERT PREVIEW -->
+<div class="section">
+  <div class="section-tag reveal">— Alert Preview</div>
+  <h2 class="section-title reveal">This is what hits your Telegram.</h2>
+  <div class="alert-preview reveal">
+    <div class="a-title">🔫 TOKEN SNIPER ALERT</div><br>
+    <span class="a-value">🟡 <b>PepeRocket ($PRKT)</b></span><br>
+    <span class="a-label">⛓ Chain: </span><span class="a-value">BSC</span> <span class="a-label">| DEX: </span><span class="a-value">PANCAKESWAP</span><br>
+    <span class="a-label">⏰ Listed: </span><span class="a-value">3m ago</span><br><br>
+    <span class="a-label">💵 Price: </span><span class="a-value">$0.00000847</span><br>
+    <span class="a-label">💧 Liquidity: </span><span class="a-value">$12,400</span><br>
+    <span class="a-label">📊 Volume (5m): </span><span class="a-value">$8,200</span><br><br>
+    <span class="a-label">🚀 Price Change (5m): </span><span class="a-up">+47.3%</span><br>
+    <span class="a-label">📈 Price Change (1h): </span><span class="a-up">+124.8%</span><br><br>
+    <span class="a-label">🟢 Buys (5m): </span><span class="a-value">34</span> <span class="a-label">| 🔴 Sells (5m): </span><span class="a-value">8</span><br><br>
+    <span class="a-label">📋 Contract:</span><br>
+    <span class="a-addr">0x4e2b3a1f8c9d7e6a0b5c3f2d1e8a4b7c6f9d2e1a</span><br><br>
+    <span class="a-link">🔗 View on DEXScreener →</span>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="section">
+  <div class="section-tag reveal">— Pricing</div>
+  <h2 class="section-title reveal" style="text-align:center">One payment. Yours forever.</h2>
+  <div class="pricing-card reveal">
+    <div class="pricing-badge">One Time Purchase</div>
+    <div class="pricing-price"><span>$</span>37</div>
+    <div class="pricing-desc">Pay once. Keep it forever. No subscription. No monthly fees.</div>
+    <ul class="pricing-features">
+      <li>Token Sniper Bot — full Python script</li>
+      <li>Monitors ETH, BSC, SOL, Base, ARB, Polygon</li>
+      <li>Instant Telegram alerts</li>
+      <li>Fully configurable filters</li>
+      <li>Complete setup guide included</li>
+      <li>Runs 24/7 on any machine</li>
+    </ul>
+    <a href="https://whop.com/YOUR-WHOP-LINK" class="btn-primary" target="_blank" style="width:100%;justify-content:center;display:flex">
+      🔫 Buy DexHawk — $37
+    </a>
+  </div>
+</div>
+
+<!-- ACCESS -->
+<div class="section" id="access">
+  <div class="section-tag reveal">— Already Purchased?</div>
+  <h2 class="section-title reveal">Access Your Files</h2>
+  <p class="section-sub reveal">Enter your Whop access token to download your files. Find it in your Whop purchase confirmation email.</p>
+  <div class="access-form reveal">
+    <input type="text" class="access-input" id="tokenInput" placeholder="Paste your access token here..."/>
+    <button class="access-btn" onclick="verifyPurchase()">VERIFY</button>
+  </div>
+  <div class="access-error" id="accessError">Invalid token. Please check your purchase confirmation.</div>
+  <div class="access-loading" id="accessLoading">VERIFYING...</div>
+  <div class="download-section" id="downloadSection">
+    <div class="download-title">✅ Purchase Verified</div>
+    <div class="download-sub">Welcome! Download your files below and follow the setup guide.</div>
+    <div class="download-grid" id="downloadGrid"></div>
+    <div class="instructions-box" id="instructionsBox"></div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="section">
+  <div class="section-tag reveal">— FAQ</div>
+  <h2 class="section-title reveal">Common Questions</h2>
+  <div class="faq-list">
+    <div class="faq-item reveal"><div class="faq-q" onclick="toggleFaq(this)">Do I need coding experience? <span class="arrow">+</span></div><div class="faq-a">No. If you can copy and paste, you can set this up. The README walks you through every step. Most people are running in under 10 minutes.</div></div>
+    <div class="faq-item reveal"><div class="faq-q" onclick="toggleFaq(this)">What do I need to run it? <span class="arrow">+</span></div><div class="faq-a">A computer running Windows, Mac, or Linux with Python installed. A Telegram account to receive alerts. That's it — everything else is free.</div></div>
+    <div class="faq-item reveal"><div class="faq-q" onclick="toggleFaq(this)">How fast are the alerts? <span class="arrow">+</span></div><div class="faq-a">The bot scans every 30 seconds by default. You can reduce this to 10-15 seconds. Most new tokens are caught within the first 3-5 minutes of listing.</div></div>
+    <div class="faq-item reveal"><div class="faq-q" onclick="toggleFaq(this)">Can I customise which chains to monitor? <span class="arrow">+</span></div><div class="faq-a">Yes. Just comment out any chains you don't want in the CONFIG section. Monitor all 6 or just 1 — completely up to you.</div></div>
+    <div class="faq-item reveal"><div class="faq-q" onclick="toggleFaq(this)">Is this financial advice? <span class="arrow">+</span></div><div class="faq-a">No. DexHawk is an information tool only. Always do your own research before trading. Crypto trading carries significant risk of loss.</div></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">DEXHAWK</div>
+  <div class="footer-text">
+    Real-time token sniper alerts across 6 chains.<br>
+    <a href="https://whop.com/YOUR-WHOP-LINK" style="color:var(--green);text-decoration:none">Get it on Whop →</a><br><br>
+    ⚠️ Not financial advice. Always DYOR. Crypto trading involves significant risk.
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // FAQ
+  function toggleFaq(el) {
+    const item = el.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  // Verify purchase
+  async function verifyPurchase() {
+    const token = document.getElementById('tokenInput').value.trim();
+    const errorEl = document.getElementById('accessError');
+    const loadingEl = document.getElementById('accessLoading');
+    const downloadEl = document.getElementById('downloadSection');
+
+    if (!token) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Please enter your access token.';
+      return;
+    }
+
+    errorEl.style.display = 'none';
+    loadingEl.style.display = 'block';
+    downloadEl.classList.remove('visible');
+
+    try {
+      const res = await fetch(`/api/verify?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      loadingEl.style.display = 'none';
+
+      if (data.success) {
+        document.getElementById('downloadGrid').innerHTML = data.files.map(f => `
+          <div class="download-file">
+            <div class="download-file-info">
+              <div class="download-file-icon">📄</div>
+              <div>
+                <div class="download-file-name">${f.name}</div>
+                <div class="download-file-desc">${f.description}</div>
+              </div>
+            </div>
+            <a href="${f.url}" download class="btn-download">↓ DOWNLOAD</a>
+          </div>`).join('');
+
+        document.getElementById('instructionsBox').innerHTML = `
+          <h4>SETUP INSTRUCTIONS</h4>
+          <ol>${data.instructions.map((s,i) => `
+            <li><div class="step-num">${i+1}</div><span>${s}</span></li>`).join('')}
+          </ol>`;
+
+        downloadEl.classList.add('visible');
+        downloadEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        errorEl.style.display = 'block';
+        errorEl.textContent = data.message || 'Invalid token. Check your purchase confirmation.';
+      }
+    } catch {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Connection error. Please try again.';
+    }
+  }
+
+  document.getElementById('tokenInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') verifyPurchase();
+  });
+</script>
+</body>
+</html>
